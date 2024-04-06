@@ -28,7 +28,7 @@ if (!isset($_SESSION['user'])) {
     exit();
 }
 
-$allowedRoles = array('ICT', 'ABM', 'Humms','STEM','GAS');
+$allowedRoles = array('STEM12');
 if (!in_array($_SESSION['user']['role'], $allowedRoles)) {
     header("Location: index.php");  
     exit();

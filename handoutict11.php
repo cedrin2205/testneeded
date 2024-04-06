@@ -1,31 +1,89 @@
 <?php
 session_start();
 
+// Check if the user is logged in
+if (!isset($_SESSION['user'])) {
+    header("Location: index.php");
+    exit();
+}
+
+// Include database connection
+require_once "database.php";
+
+$user_id = $_SESSION['user']['id']; // Assuming 'id' is the primary key of the users table
+$sql = "SELECT full_name, role FROM users WHERE id = ?";
+$stmt = mysqli_prepare($conn, $sql);
+if ($stmt) {
+    mysqli_stmt_bind_param($stmt, "i", $user_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $full_name, $selected_role);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
+} else {
+    $full_name = "Unknown"; // Default value if unable to fetch full name
+    $selected_role = "Unknown"; // Default value if unable to fetch selected role
+}
+
+// Debug: Check $_SESSION['user']['role']
+echo "User role: " . $_SESSION['user']['role'] . "<br>";
+
 if (!isset($_SESSION['user'])) {
     header("Location: login.php"); 
     exit();
 }
 
-$allowedRoles = array('ICTteacher');
+$allowedRoles = array('ICTteacher', 'ABMteacher', 'HUMMSteacher','STEMteacher','GASteacher');
 if (!in_array($_SESSION['user']['role'], $allowedRoles)) {
     header("Location: index.php");  
     exit();
 }
 
-
 $roleHomePageMap = [
     'ICTteacher' => 'ICTTEACHER11home.php',
-    
+    'ABMteacher' => 'ABMTEACHER11home.php',
+    'HUMMSteacher' => 'HUMMSTEACHER11home.php',
+    'STEMteacher' => 'STEM11TEACHERhome.php',
+    'GASteacher' => 'GAS11TEACHERhome.php',
 ];
 
+// Debug: Check $roleHomePageMap
+echo "Home page URL: " . $roleHomePageMap[$_SESSION['user']['role']] . "<br>";
 
 if (array_key_exists($_SESSION['user']['role'], $roleHomePageMap)) {
-    
     $homePageURL = $roleHomePageMap[$_SESSION['user']['role']];
 } else {
-   
     echo "No home page found for the given role.";
 }
+
+$roleUrls = [
+    'ICTteacher' => ['ictupload.php', 'ICTTEACHER11home.php'],
+    'ABMTEACHER' => ['abmupload.php', 'ABMTEACHER11home.php'],
+    'GASteacher' => ['gasupload.php', 'GASTEACHER11home.php'],
+    'HUMMSteacher' => ['hummsupload.php', 'HUMSS11TEACHERhome.php'],
+    // Add more roles and URLs as needed
+];
+
+// Check if the user is logged in and their role is set
+if (isset($_SESSION['user'], $_SESSION['user']['role'])) {
+    // Get the role of the logged-in user
+    $role = strtoupper($_SESSION['user']['role']); // Convert to uppercase
+
+    // Debug: Check if the role exists in $roleUrls
+    if (array_key_exists($role, $roleUrls)) {
+        echo "Role '$role' exists in roleUrls<br>";
+        // Get the corresponding URLs for the role
+        $roleUrlsForUser = $roleUrls[$role];
+    } else {
+        echo "Role '$role' does not exist in roleUrls<br>";
+        // Default URLs if role is not found
+        $roleUrlsForUser = ['#', '#']; // Default URLs
+    }
+} else {
+    // Default URLs if user is not logged in or role is not set
+    $roleUrlsForUser = ['#', '#']; // Default URLs
+}
+
+
 
 if (isset($_GET['delete_image'])) {
     $imageToDelete = $_GET['delete_image'];
@@ -35,7 +93,7 @@ if (isset($_GET['delete_image'])) {
     $deleteQuery = "DELETE FROM handoutict11 WHERE image_url = '$imageToDelete'";
     if (mysqli_query($conn, $deleteQuery)) {
         if (unlink("uploads/$imageToDelete")) {
-            header("Location: handoutict11.php");
+            header("Location: handoutict11upload.php");
             exit();
         } else {
             echo "Failed to delete the file from the server.";
@@ -46,47 +104,111 @@ if (isset($_GET['delete_image'])) {
 }
 
 ?> 
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
-      <meta charset="UTF-8">
-      <meta http-equiv="X-UA-Compatible" content="IE=edge">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>HandoutICT</title>
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-      <link rel="stylesheet" href="upload.css">
-      <link rel="stylesheet" href="students.css">
-      <link rel="stylesheet" href="handout.css">
-      <link rel="stylesheet" href="studentshome.css">
-
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Unique Subs</title>
+    <link
+      rel="stylesheet"
+      href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://maxst.icons8.com/vue-static/landings/line-awesome/font-awesome-line-awesome/css/all.min.css"
+    />
+    <link rel="stylesheet" href="adminhome.css" />
+    <link rel="stylesheet" href="handout.css" />
   </head>
   <body>
-    
-        <header>
-           <div class="profile-strand">
-                <img class="profile-img" src="img/blob.jpg">
-                <p class="strand">Teachers Upload ICT</p>
-            </div>
+    <input type="checkbox" id="nav-toggle" />
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <h2><span class="lab la-accusoft"></span><span>EmpowerEDU</span></h2>
+      </div>
 
-            <a><button onclick="goBack()" class="btn">Back</button></a>
-        </header>
+      <div class="sidebar-menu">
+    <ul>
+        <li>
+            <a href="<?php echo $roleUrlsForUser[1]; ?>" class="">
+                <span class="las la-igloo"></span> <span>Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a href="" class="active">
+                <span class="las la-clipboard-list"></span>
+                <span>Handout 1 and 2</span>
+            </a>
+        </li>
+        <li>
+            <a href="handout2q.php">
+                <span class="las la-clipboard-list"></span>
+                <span>Handout 3 and 4</span>
+            </a>
+        </li>
+        <li>
+            <a href="handout3q.php">
+                <span class="las la-clipboard-list"></span>
+                <span>Handout 5 and 6</span>
+            </a>
+        </li>
+        <li>
+            <a href="<?php echo $roleUrlsForUser[0]; ?>">
+                <span class="las la-clipboard-list"></span>
+                <span>Unique Subs</span>
+            </a>
+        </li>
+    </ul>
+</div>
+    </div>
+    <div class="main-content">
+      <header>
+        <h3>
+          <div class="header-title">
+            <label for="nav-toggle">
+              <span class="las la-bars"></span>
+            </label>
+            Unique Subs
+          </div>
+        </h3>
 
-        <section>
-           
-            <div class="modules-wrap">
+        <div class="user-wrapper">
+          <img src="img/2.jpg" width="30px" height="30px" alt="" />
+          <div>
+            <h4><?php echo $full_name; ?></h4>
+            <small><?php echo $selected_role; ?></small>
+          </div>
+          <div>
+            <a href="logout.php">
+                <span class="material-symbols-outlined" name="logout">
+                    logout
+                </span>
+
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main>
+            <div class="">
                 <div class="image-modal">
                     <span class="close">&times;</span>
                     <img class="modal-content" id="expandedImg">
                 </div>
             </div>
-
-            <div class="contain">
+              <div class="" style="
+              position: absolute;
+              top: 100px;
+              left: 400px;
+              ">
                 <form action="handoutict11upload.php" method="post" enctype="multipart/form-data">
                     <input type="file" name="my_image">
                     <input type="submit" name="submit" value="Upload">
                 </form>
             </div>
-            <div class="gallery">
+            <div class="cards">
                 <?php 
                 include "handoutdb.php";
                 $limit = 15; 
@@ -115,9 +237,6 @@ if (isset($_GET['delete_image'])) {
                             }
                             ?>
                             <p><?php echo $handoutict11['filename']; ?></p>
-                            <a class="delete-btn" href="handoutict11.php?delete_image=<?=$handoutict11['image_url']?>">
-                                <img src="img/remove.png" alt="Delete" width="1" height="1">
-                            </a>
                             <a class="download-btn" href="uploads/<?=$handoutict11['image_url']?>" download="<?=$handoutict11['image_url']?>">
                                 <img src="img/download.png" alt="Download" width="20" height="20">
                             </a>
@@ -126,15 +245,13 @@ if (isset($_GET['delete_image'])) {
             }
             ?>
 </div>
-         </section>
-
+      </main>
+    </div>
          <script src="script.js"></script>
          <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
          <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-             
-  </body>
-</html>
-    <script>
+
+         <script>
          function goBack() {
             <?php
             
@@ -162,5 +279,6 @@ if (isset($_GET['delete_image'])) {
         document.querySelector('.image-modal').style.display = 'none';
     });
 </script>
-</body>
+             
+  </body>
 </html>

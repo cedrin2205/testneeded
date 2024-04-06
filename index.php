@@ -80,6 +80,6 @@ if ($role === "admin") {
     exit();
 }
 
-header("Location: index.php");
+header("Location: login.php");
 exit();
 ?>

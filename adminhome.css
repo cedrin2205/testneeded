@@ -159,9 +159,9 @@ header label span {
 
 main {
   margin-top: -50px;
-  padding: 1rem 28.7rem 12rem;
+  padding: 1rem 48rem 12rem;
   background: #f1f5f9;
-  min-height: calc(115vh - 90px);
+  min-height: calc(130vh - 100px);
 }
 
 .cards {
@@ -422,7 +422,7 @@ tr td:last-child {
   margin-top: 85px;
   padding: 2rem 1.5rem;
   background: #f1f5f9;
-  min-height: calc(115vh - 90px);
+  min-height: calc(120vh - 90px);
 }
 
 .material-symbols-outlined {

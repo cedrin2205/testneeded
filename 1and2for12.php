@@ -197,14 +197,6 @@ if (isset($_SESSION['user'], $_SESSION['user']['role'])) {
                 <span>Unique Subs</span>
             </a>
         </li>
-         <li>
-            <a href="logout.php">
-            <span class="material-symbols-outlined">
-                Logout
-            </span>
-            Logout
-            </a>
-        </li>
     </ul>
 </div>
     </div>
